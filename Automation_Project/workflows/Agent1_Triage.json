@@ -1,0 +1,194 @@
+{
+  "name": "Agent1_Triage",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Patient Triage Resgistration",
+        "formDescription": "Please provide your details for emergency triage assessment",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Age",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone Number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Chief Complaint",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Heart Rate BPM ",
+              "fieldType": "number"
+            },
+            {
+              "fieldLabel": "Blood Oxygen Level",
+              "fieldType": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "d9312492-0add-4b8b-a1a3-e19826bbaced",
+      "name": "On form submission",
+      "webhookId": "6c1afef6-9baf-47cc-84d7-2f5c84e7f1e0"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Red Flag keyword checker\nconst complaint = $input.first().json['Chief Complaint'].toLowerCase();\n\nconst redFlagKeywords = [\n  'chest pain', 'chest pressure', 'chest tightness',\n  'not breathing', \"can't breathe\", 'cannot breathe',\n  'difficulty breathing', 'shortness of breath',\n  'unconscious', 'unresponsive', 'not responding',\n  'seizure', 'convulsions', 'fitting',\n  'stroke', 'facial droop', 'slurred speech',\n  'severe bleeding', 'bleeding profusely',\n  'allergic reaction', 'anaphylaxis', 'throat closing',\n  'cardiac arrest', 'heart attack',\n  'collapse', 'collapsed', 'fainted',\n  'crushing pain'\n];\n\nlet redFlagTriggered = false;\nlet matchedKeyword = null;\n\nfor (const keyword of redFlagKeywords) {\n  if (complaint.includes(keyword)) {\n    redFlagTriggered = true;\n    matchedKeyword = keyword;\n    break;\n  }\n}\n\nreturn {\n  ...$input.first().json,\n  redFlagTriggered,\n  matchedKeyword,\n  priority: redFlagTriggered ? 'P1' : null\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "38583a8d-70a1-4dfe-abdf-5f6c223d572f",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dccf659b-9a96-416a-9fb7-2d050a313835",
+              "leftValue": "=red {{ $json.redFlagTriggered }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "ab17f7c4-8d08-4a92-8b5c-48b7b125294e",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        -112
+      ],
+      "id": "f257a482-46c8-454d-a6c4-863e977c7a79",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "chatId": "1813361599",
+        "text": "🚨 EMERGENCY TRIAGE ALERT  Patient: Test Patient Token: TRG-1234   Priority: P1 - IMMEDIATE ATTENTION Complaint: Severe chest pain  Please attend within 5 minutes.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        16
+      ],
+      "id": "d49235b3-bf05-47ac-9081-c6f0592b3140",
+      "name": "Send a text message",
+      "webhookId": "6c828757-62f4-462b-aa62-65ee32b99095",
+      "credentials": {
+        "telegramApi": {
+          "id": "Xb4g0lTHiYwiuibG",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d8e7bf04-ab19-45ba-8e57-00a16b9a68ac",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48c55ceb206faaafc228a284dd14132db4eda51a11048859e9681b67fca898d6"
+  },
+  "id": "vGdU0IL3tZiNLCn3",
+  "tags": []
+}
