@@ -1,0 +1,207 @@
+{
+  "name": "Agent2_Appointment_Scheduler",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Schedule Appointment with us. ",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone Number ",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Preferred Time",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "9:00 AM"
+                  },
+                  {
+                    "option": "9:30 AM"
+                  },
+                  {
+                    "option": "11:00 AM"
+                  },
+                  {
+                    "option": "11:30 AM"
+                  },
+                  {
+                    "option": "12:00 PM"
+                  },
+                  {
+                    "option": "12:30 PM"
+                  },
+                  {
+                    "option": "2:30 PM"
+                  },
+                  {
+                    "option": "3:00 PM"
+                  },
+                  {
+                    "option": "3:30 PM"
+                  },
+                  {
+                    "option": "4:00 PM"
+                  },
+                  {
+                    "option": "4:30 PM"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Appointment Type",
+              "fieldType": "dropdown",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Consultation"
+                  },
+                  {
+                    "option": "Follow Up"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.5,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9bc9bda4-08cf-4167-948b-915eecfd62b2",
+      "name": "On form submission",
+      "webhookId": "02f4f866-ffa7-4da7-87a5-81c3fd6e433d"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Simple availability checker\nconst preferredDate = $input.first().json['Preferred Date'];\nconst preferredTime = $input.first().json['Preferred Time'];\n\n// Hardcoded busy slots (simulate database)\nconst busySlots = [\n  { date: '2026-05-08', time: '09:00 AM' },\n  { date: '2026-05-08', time: '02:00 PM' },\n  { date: '2026-05-09', time: '11:00 AM' }\n];\n\n// Check if slot is available\nconst isAvailable = !busySlots.some(slot => \n  slot.date === preferredDate && slot.time === preferredTime\n);\n\n// Generate token\nconst token = 'APT-' + Math.floor(1000 + Math.random() * 9000);\n\nreturn {\n  ...$input.first().json,\n  isAvailable,\n  token,\n  status: isAvailable ? 'CONFIRMED' : 'NEEDS_ALTERNATIVE'\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "80216672-c4e0-4ae8-b9d9-96392ced29ca",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0541ba9a-1c85-4025-b10a-031939d5e089",
+              "leftValue": true,
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        416,
+        0
+      ],
+      "id": "5736ec8e-2545-4dc6-b454-ce43d27a3c50",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "1813361599",
+        "text": "=✅ APPOINTMENT CONFIRMED\n\nName: {{ $json[\"Full Name\"] }}\nToken: {{ $json.token }}\nDate: {{ $json[\"Preferred Date\"] }}\nTime: {{ $json[\"Preferred Time\"] }}\nType: {{ $json[\"Appointment Type\"] }}\n\nPlease arrive 10 minutes early.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        624,
+        -96
+      ],
+      "id": "1a3ae365-9d15-44c3-a977-0ea237dda4c3",
+      "name": "Send a text message",
+      "webhookId": "09d12aeb-09dd-4c90-8d34-c4956e042e07",
+      "credentials": {
+        "telegramApi": {
+          "id": "Xb4g0lTHiYwiuibG",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b75dee18-2714-4a08-8ef4-a73164745326",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "48c55ceb206faaafc228a284dd14132db4eda51a11048859e9681b67fca898d6"
+  },
+  "id": "WtSuGctgFOAHaX6z",
+  "tags": []
+}
